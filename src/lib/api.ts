@@ -1,13 +1,8 @@
 /* API Utility for Supabase Interaction via Fetch */
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
-const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
-
-if (!SUPABASE_URL || !SUPABASE_KEY) {
-  throw new Error(
-    'Supabase environment variables are missing in API configuration.',
-  )
-}
+const SUPABASE_URL = 'https://ktfvfulefozcecmemqaj.supabase.co'
+const SUPABASE_KEY =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0ZnZmdWxlZm96Y2VjbWVtcWFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzM0MzY0NDAsImV4cCI6MjA0OTAxMjQ0MH0.JM9h8bLFPm9hPrNxOl8IlAC4uW4_8TRi0PHkAKKfE8Y'
 
 interface FetchOptions extends RequestInit {
   token?: string
