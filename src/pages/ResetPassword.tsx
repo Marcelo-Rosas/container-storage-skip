@@ -35,7 +35,7 @@ export default function ResetPassword() {
   const navigate = useNavigate()
   const { setSession } = useAuthStore()
   const [isLoading, setIsLoading] = useState(false)
-  const [checkingSession, setCheckingSession] = useState(true)
+  const [isReady, setIsReady] = useState(false)
 
   const form = useForm<ResetPasswordForm>({
     resolver: zodResolver(resetPasswordSchema),
@@ -43,29 +43,50 @@ export default function ResetPassword() {
   })
 
   useEffect(() => {
-    // Check if we have a valid session (Supabase handles URL hash parsing automatically)
-    const checkSession = async () => {
-      try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession()
-        if (!session) {
-          toast.error('Link inválido ou expirado', {
-            description:
-              'Por favor, solicite um novo link de recuperação de senha.',
-          })
-          navigate('/recuperar-senha')
-        }
-      } catch (error) {
-        console.error('Session check error:', error)
-        navigate('/recuperar-senha')
-      } finally {
-        setCheckingSession(false)
+    // Check initial session in case user refreshes or token is already processed
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setIsReady(true)
       }
-    }
+    })
 
-    checkSession()
-  }, [navigate])
+    // Listen for auth state changes as required by user story
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsReady(true)
+      } else if (event === 'SIGNED_IN' && session) {
+        // Recovery links often sign the user in immediately
+        setIsReady(true)
+      }
+    })
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [])
+
+  // Timeout to handle invalid links or missing session
+  useEffect(() => {
+    if (isReady) return
+
+    const timeout = setTimeout(async () => {
+      // Double check session before failing
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+      if (!session && !isReady) {
+        toast.error('Link inválido ou expirado', {
+          description:
+            'Por favor, solicite um novo link de recuperação de senha.',
+        })
+        navigate('/recuperar-senha')
+      }
+    }, 4000)
+
+    return () => clearTimeout(timeout)
+  }, [isReady, navigate])
 
   const onSubmit = async (data: ResetPasswordForm) => {
     setIsLoading(true)
@@ -85,15 +106,15 @@ export default function ResetPassword() {
 
       if (session) {
         // Automatically log the user in by updating the store
+        // This will trigger the auth store to fetch user profile and redirect logic in App/Index
         setSession(session.access_token)
 
         toast.success('Senha redefinida com sucesso!', {
-          description: 'Você será redirecionado para o dashboard.',
+          description: 'Você será redirecionado para o sistema.',
         })
 
-        // The isLoading state in AuthProvider will handle the protection
-        // This ensures seamless transition
-        navigate('/dashboard')
+        // Redirect to main app route as requested
+        navigate('/')
       } else {
         // Fallback if session is lost
         toast.success('Senha redefinida com sucesso!', {
@@ -111,10 +132,13 @@ export default function ResetPassword() {
     }
   }
 
-  if (checkingSession) {
+  if (!isReady) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 gap-4">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-sm text-muted-foreground animate-pulse">
+          Verificando link de recuperação...
+        </p>
       </div>
     )
   }
