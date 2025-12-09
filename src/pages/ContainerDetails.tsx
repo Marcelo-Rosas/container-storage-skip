@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -88,7 +88,10 @@ export default function ContainerDetails() {
     resolver: zodResolver(eventSchema),
   })
 
-  const fetchDetails = async () => {
+  // Destructure reset to use in dependency array
+  const { reset: resetEditForm } = editForm
+
+  const fetchDetails = useCallback(async () => {
     if (!user || !token || !id) return
     setLoading(true)
     try {
@@ -106,7 +109,7 @@ export default function ContainerDetails() {
       }
 
       setContainer(c)
-      editForm.reset({ type: c.type, status: c.status })
+      resetEditForm({ type: c.type, status: c.status })
 
       const inv = await api.db.select<any>(
         'inventory',
@@ -127,11 +130,11 @@ export default function ContainerDetails() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [id, user, token, navigate, resetEditForm])
 
   useEffect(() => {
     fetchDetails()
-  }, [id, user, token])
+  }, [fetchDetails])
 
   const onEditContainer = async (data: z.infer<typeof containerEditSchema>) => {
     try {
