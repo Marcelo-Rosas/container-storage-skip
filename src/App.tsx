@@ -1,14 +1,30 @@
-/* Main App Component - Handles routing (using react-router-dom), query client and other providers - use this file to add all routes */
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from '@/components/ui/toaster'
 import { Toaster as Sonner } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import Index from './pages/Index'
+import Dashboard from './pages/Dashboard'
+import Containers from './pages/Containers'
+import ContainerDetails from './pages/ContainerDetails'
 import NotFound from './pages/NotFound'
 import Layout from './components/Layout'
+import { AuthProvider } from '@/stores/useAuthStore'
+import useAuthStore from '@/stores/useAuthStore'
 
-// ONLY IMPORT AND RENDER WORKING PAGES, NEVER ADD PLACEHOLDER COMPONENTS OR PAGES IN THIS FILE
-// AVOID REMOVING ANY CONTEXT PROVIDERS FROM THIS FILE (e.g. TooltipProvider, Toaster, Sonner)
+// Protected Route Wrapper
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, isLoading } = useAuthStore()
+
+  if (isLoading)
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        Carregando...
+      </div>
+    )
+  if (!user) return <Navigate to="/" replace />
+
+  return <>{children}</>
+}
 
 const App = () => (
   <BrowserRouter
@@ -16,14 +32,39 @@ const App = () => (
   >
     <TooltipProvider>
       <Toaster />
-      <Sonner />
-      <Routes>
-        <Route element={<Layout />}>
+      <Sonner position="top-right" />
+      <AuthProvider>
+        <Routes>
           <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES MUST BE ADDED HERE */}
-        </Route>
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+          <Route element={<Layout />}>
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/containers"
+              element={
+                <ProtectedRoute>
+                  <Containers />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/containers/:id"
+              element={
+                <ProtectedRoute>
+                  <ContainerDetails />
+                </ProtectedRoute>
+              }
+            />
+          </Route>
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </AuthProvider>
     </TooltipProvider>
   </BrowserRouter>
 )
