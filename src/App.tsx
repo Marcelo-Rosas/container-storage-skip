@@ -7,6 +7,8 @@ import Dashboard from './pages/Dashboard'
 import Containers from './pages/Containers'
 import ContainerDetails from './pages/ContainerDetails'
 import AdminUsers from './pages/admin/Users'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
 import NotFound from './pages/NotFound'
 import Layout from './components/Layout'
 import { AuthProvider } from '@/stores/useAuthStore'
@@ -53,6 +55,8 @@ const App = () => (
       <AuthProvider>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/recuperar-senha" element={<ForgotPassword />} />
+          <Route path="/redefinir-senha" element={<ResetPassword />} />
           <Route element={<Layout />}>
             <Route
               path="/dashboard"

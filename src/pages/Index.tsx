@@ -1,6 +1,6 @@
 /* Login Page */
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -98,7 +98,9 @@ export default function Index() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Senha</FormLabel>
+                    <div className="flex items-center justify-between">
+                      <FormLabel>Senha</FormLabel>
+                    </div>
                     <FormControl>
                       <div className="relative">
                         <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -111,6 +113,14 @@ export default function Index() {
                       </div>
                     </FormControl>
                     <FormMessage />
+                    <div className="flex justify-end">
+                      <Link
+                        to="/recuperar-senha"
+                        className="text-xs text-muted-foreground hover:text-primary hover:underline"
+                      >
+                        Esqueci minha senha
+                      </Link>
+                    </div>
                   </FormItem>
                 )}
               />
