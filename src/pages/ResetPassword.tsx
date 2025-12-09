@@ -34,8 +34,9 @@ type ResetPasswordForm = z.infer<typeof resetPasswordSchema>
 export default function ResetPassword() {
   const navigate = useNavigate()
   const { setSession } = useAuthStore()
-  const [isLoading, setIsLoading] = useState(false)
-  const [isReady, setIsReady] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [canResetPassword, setCanResetPassword] = useState(false)
+  const [isChecking, setIsChecking] = useState(true)
 
   const form = useForm<ResetPasswordForm>({
     resolver: zodResolver(resetPasswordSchema),
@@ -43,54 +44,61 @@ export default function ResetPassword() {
   })
 
   useEffect(() => {
-    // Check initial session in case user refreshes or token is already processed
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        setIsReady(true)
-      }
-    })
+    const handleRecoverySession = async () => {
+      // Extract authentication parameters from the URL hash
+      const hash = window.location.hash.substring(1)
+      const params = new URLSearchParams(hash)
+      const accessToken = params.get('access_token')
+      const refreshToken = params.get('refresh_token')
+      const type = params.get('type')
 
-    // Listen for auth state changes as required by user story
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        setIsReady(true)
-      } else if (event === 'SIGNED_IN' && session) {
-        // Recovery links often sign the user in immediately
-        setIsReady(true)
-      }
-    })
+      // Check if we have the recovery parameters
+      if (type === 'recovery' && accessToken && refreshToken) {
+        try {
+          // Attempt to establish a session with the extracted tokens
+          const { error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          })
 
-    return () => {
-      subscription.unsubscribe()
+          if (error) {
+            throw error
+          }
+
+          // Session established successfully
+          setCanResetPassword(true)
+        } catch (error) {
+          console.error('Failed to establish session:', error)
+          toast.error('Link expirado ou inválido', {
+            description:
+              'Por favor, solicite um novo link de recuperação de senha.',
+          })
+          navigate('/')
+        }
+      } else {
+        // Fallback: Check if there's already an active session
+        // This handles cases where Supabase might have already processed the hash
+        const {
+          data: { session },
+        } = await supabase.auth.getSession()
+
+        if (session) {
+          setCanResetPassword(true)
+        } else {
+          // No valid tokens and no session - redirect to login
+          navigate('/')
+        }
+      }
+      setIsChecking(false)
     }
-  }, [])
 
-  // Timeout to handle invalid links or missing session
-  useEffect(() => {
-    if (isReady) return
-
-    const timeout = setTimeout(async () => {
-      // Double check session before failing
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
-      if (!session && !isReady) {
-        toast.error('Link inválido ou expirado', {
-          description:
-            'Por favor, solicite um novo link de recuperação de senha.',
-        })
-        navigate('/recuperar-senha')
-      }
-    }, 4000)
-
-    return () => clearTimeout(timeout)
-  }, [isReady, navigate])
+    handleRecoverySession()
+  }, [navigate])
 
   const onSubmit = async (data: ResetPasswordForm) => {
-    setIsLoading(true)
+    setIsSubmitting(true)
     try {
+      // Update the user's password using the established session
       const { error } = await supabase.auth.updateUser({
         password: data.password,
       })
@@ -99,40 +107,31 @@ export default function ResetPassword() {
         throw error
       }
 
-      // Check if session is still valid and get the token
+      toast.success('Senha redefinida com sucesso!', {
+        description: 'Você será redirecionado para o sistema.',
+      })
+
+      // Ensure the auth store is synced with the current session
       const {
         data: { session },
       } = await supabase.auth.getSession()
 
       if (session) {
-        // Automatically log the user in by updating the store
-        // This will trigger the auth store to fetch user profile and redirect logic in App/Index
         setSession(session.access_token)
-
-        toast.success('Senha redefinida com sucesso!', {
-          description: 'Você será redirecionado para o sistema.',
-        })
-
-        // Redirect to main app route as requested
-        navigate('/')
-      } else {
-        // Fallback if session is lost
-        toast.success('Senha redefinida com sucesso!', {
-          description: 'Por favor, faça login com sua nova senha.',
-        })
-        navigate('/')
       }
+
+      navigate('/')
     } catch (error: any) {
       console.error('Update password error:', error)
       toast.error('Erro ao redefinir senha', {
         description: error.message || 'Ocorreu um erro ao atualizar sua senha.',
       })
     } finally {
-      setIsLoading(false)
+      setIsSubmitting(false)
     }
   }
 
-  if (!isReady) {
+  if (isChecking) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 gap-4">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -141,6 +140,10 @@ export default function ResetPassword() {
         </p>
       </div>
     )
+  }
+
+  if (!canResetPassword) {
+    return null
   }
 
   return (
@@ -197,8 +200,8 @@ export default function ResetPassword() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? (
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
                   'Redefinir Senha'
