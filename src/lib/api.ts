@@ -1,8 +1,7 @@
 /* API Utility for Supabase Interaction via Fetch */
 
-const SUPABASE_URL = 'https://ktfvfulefozcecmemqaj.supabase.co'
-const SUPABASE_KEY =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0ZnZmdWxlZm96Y2VjbWVtcWFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzM0MzY0NDAsImV4cCI6MjA0OTAxMjQ0MH0.JM9h8bLFPm9hPrNxOl8IlAC4uW4_8TRi0PHkAKKfE8Y'
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string
 
 interface FetchOptions extends RequestInit {
   token?: string
