@@ -1,20 +1,11 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { Plus, Search, FilterX, Loader2 } from 'lucide-react'
-import { format } from 'date-fns'
 import useAuthStore from '@/stores/useAuthStore'
 import { supabase } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
 import {
   Select,
   SelectContent,
@@ -31,21 +22,9 @@ import {
   PaginationPrevious,
   PaginationEllipsis,
 } from '@/components/ui/pagination'
-import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
-
-type Container = {
-  id: string
-  container_number: string
-  container_code: string
-  start_date: string
-  status: string
-  yard_location: string
-  client_id: string
-  clients: {
-    name: string
-  } | null
-}
+import { ContainerWithStats } from '@/types/container'
+import { ContainerCard } from '@/components/ContainerCard'
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50]
 
@@ -53,7 +32,7 @@ export default function Containers() {
   const { user } = useAuthStore()
   const navigate = useNavigate()
 
-  const [containers, setContainers] = useState<Container[]>([])
+  const [containers, setContainers] = useState<ContainerWithStats[]>([])
   const [loading, setLoading] = useState(true)
   const [totalCount, setTotalCount] = useState(0)
 
@@ -63,8 +42,8 @@ export default function Containers() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [clientFilter, setClientFilter] = useState<string>('all')
-  const [sortColumn, setSortColumn] = useState<string>('container_number')
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
+  const [sortColumn, setSortColumn] = useState<string>('created_at')
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
 
   // Lists for dropdowns
   const [clientsList, setClientsList] = useState<
@@ -87,18 +66,16 @@ export default function Containers() {
     const fetchContainers = async () => {
       setLoading(true)
       try {
+        // Query the new View instead of the raw table
         let query = supabase
-          .from('containers')
-          .select(
-            'id, container_number, container_code, start_date, status, yard_location, client_id, clients(name)',
-            {
-              count: 'exact',
-            },
-          )
+          .from('containers_stats_view')
+          .select('*', { count: 'exact' })
 
-        // Apply Search (Container Number)
+        // Apply Search (Container Number or Client Name)
         if (search) {
-          query = query.ilike('container_number', `%${search}%`)
+          query = query.or(
+            `container_number.ilike.%${search}%,client_name.ilike.%${search}%`,
+          )
         }
 
         // Apply Status Filter
@@ -112,14 +89,10 @@ export default function Containers() {
         }
 
         // Apply Sorting
-        if (sortColumn === 'client_name') {
-          // Sorting by foreign table column is tricky in simple query builder without specific setup or view.
-          // Fallback: we sort by client_id for now as proxy, or we accept simple sorting limitation.
-          // However, we can use the foreign table sort syntax if supported or sort locally (not scalable).
-          // Supabase supports sorting by referenced table: order('clients(name)')
-          query = query.order('clients(name)', {
-            ascending: sortDirection === 'asc',
-          })
+        // Default sort by start_date desc if not specified, but state has default
+        if (sortColumn === 'created_at') {
+          // View doesn't have created_at, fallback to start_date or id
+          query = query.order('start_date', { ascending: false })
         } else {
           query = query.order(sortColumn, {
             ascending: sortDirection === 'asc',
@@ -135,7 +108,7 @@ export default function Containers() {
 
         if (error) throw error
 
-        setContainers(data as any[]) // Type assertion needed for joined data
+        setContainers((data as any[]) || [])
         setTotalCount(count || 0)
       } catch (error) {
         console.error('Error fetching containers:', error)
@@ -160,15 +133,6 @@ export default function Containers() {
     sortDirection,
   ])
 
-  const handleSort = (column: string) => {
-    if (sortColumn === column) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
-    } else {
-      setSortColumn(column)
-      setSortDirection('asc')
-    }
-  }
-
   const clearFilters = () => {
     setSearch('')
     setStatusFilter('all')
@@ -177,19 +141,6 @@ export default function Containers() {
   }
 
   const totalPages = Math.ceil(totalCount / pageSize)
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'default'
-      case 'inactive':
-        return 'secondary'
-      case 'closed':
-        return 'outline'
-      default:
-        return 'secondary'
-    }
-  }
 
   return (
     <div className="space-y-6">
@@ -214,7 +165,7 @@ export default function Containers() {
             <div className="relative">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar número..."
+                placeholder="Buscar número ou cliente..."
                 className="pl-9"
                 value={search}
                 onChange={(e) => {
@@ -262,113 +213,73 @@ export default function Containers() {
               </SelectContent>
             </Select>
 
+            <div className="flex gap-2">
+              <Select
+                value={sortColumn}
+                onValueChange={(val) => {
+                  setSortColumn(val)
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Ordenar por" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="created_at">Recentes</SelectItem>
+                  <SelectItem value="container_number">Número</SelectItem>
+                  <SelectItem value="client_name">Cliente</SelectItem>
+                  <SelectItem value="start_date">Data Início</SelectItem>
+                  <SelectItem value="items_count">Qtd Itens</SelectItem>
+                  <SelectItem value="used_volume">Volume Usado</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() =>
+                  setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'))
+                }
+                title={sortDirection === 'asc' ? 'Ascendente' : 'Descendente'}
+              >
+                {sortDirection === 'asc' ? '↑' : '↓'}
+              </Button>
+            </div>
+
             <Button
               variant="ghost"
               onClick={clearFilters}
-              className="text-muted-foreground w-full md:w-auto"
+              className="text-muted-foreground w-full md:w-auto lg:col-span-4 lg:w-full"
             >
               <FilterX className="mr-2 h-4 w-4" />
-              Limpar
+              Limpar Filtros
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead
-                  className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => handleSort('container_number')}
-                >
-                  Número{' '}
-                  {sortColumn === 'container_number' &&
-                    (sortDirection === 'asc' ? '↑' : '↓')}
-                </TableHead>
-                <TableHead
-                  className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => handleSort('client_name')}
-                >
-                  Cliente{' '}
-                  {sortColumn === 'client_name' &&
-                    (sortDirection === 'asc' ? '↑' : '↓')}
-                </TableHead>
-                <TableHead>Código</TableHead>
-                <TableHead
-                  className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => handleSort('start_date')}
-                >
-                  Início{' '}
-                  {sortColumn === 'start_date' &&
-                    (sortDirection === 'asc' ? '↑' : '↓')}
-                </TableHead>
-                <TableHead
-                  className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => handleSort('status')}
-                >
-                  Status{' '}
-                  {sortColumn === 'status' &&
-                    (sortDirection === 'asc' ? '↑' : '↓')}
-                </TableHead>
-                <TableHead>Localização</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="h-24 text-center">
-                    <Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" />
-                  </TableCell>
-                </TableRow>
-              ) : containers.length === 0 ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={7}
-                    className="h-24 text-center text-muted-foreground"
-                  >
-                    Nenhum contêiner encontrado.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                containers.map((container) => (
-                  <TableRow key={container.id} className="group">
-                    <TableCell className="font-medium">
-                      {container.container_number}
-                    </TableCell>
-                    <TableCell>{container.clients?.name || '-'}</TableCell>
-                    <TableCell>{container.container_code}</TableCell>
-                    <TableCell>
-                      {container.start_date
-                        ? format(new Date(container.start_date), 'dd/MM/yyyy')
-                        : '-'}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={getStatusColor(container.status) as any}
-                        className="capitalize"
-                      >
-                        {container.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{container.yard_location || '-'}</TableCell>
-                    <TableCell className="text-right">
-                      <Button asChild variant="ghost" size="sm">
-                        <Link to={`/containers/${container.id}`}>Detalhes</Link>
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      {/* Container Cards Grid */}
+      {loading ? (
+        <div className="flex justify-center items-center py-20">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+      ) : containers.length === 0 ? (
+        <div className="text-center py-20 bg-muted/30 rounded-lg border border-dashed">
+          <p className="text-lg text-muted-foreground">
+            Nenhum contêiner encontrado.
+          </p>
+          <Button variant="link" onClick={clearFilters}>
+            Limpar filtros
+          </Button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 animate-fade-in-up">
+          {containers.map((container) => (
+            <ContainerCard key={container.id} container={container} />
+          ))}
+        </div>
+      )}
 
       {/* Pagination */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-4 border-t">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <span>Itens por página:</span>
           <Select
@@ -413,9 +324,11 @@ export default function Containers() {
                 />
               </PaginationItem>
 
-              {/* Simple Pagination Logic for brevity */}
               {Array.from({ length: Math.min(totalPages, 5) }).map((_, i) => {
+                // Simplified pagination logic showing first 5 or logic around current page
+                // For brevity, just first 5. Real app would handle ranges.
                 const p = i + 1
+                if (p > totalPages) return null
                 return (
                   <PaginationItem key={p}>
                     <PaginationLink
@@ -431,6 +344,7 @@ export default function Containers() {
                   </PaginationItem>
                 )
               })}
+
               {totalPages > 5 && (
                 <PaginationItem>
                   <PaginationEllipsis />
