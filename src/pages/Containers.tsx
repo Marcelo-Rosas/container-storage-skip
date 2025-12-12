@@ -1,16 +1,12 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { Plus, Search, FilterX, Loader2 } from 'lucide-react'
+import { format } from 'date-fns'
 import useAuthStore from '@/stores/useAuthStore'
-import { api } from '@/lib/api'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { supabase } from '@/lib/supabase/client'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Table,
   TableBody,
@@ -19,106 +15,199 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Button } from '@/components/ui/button'
-import { Eye, Search, FilterX } from 'lucide-react'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+  PaginationEllipsis,
+} from '@/components/ui/pagination'
 import { Badge } from '@/components/ui/badge'
-import { Skeleton } from '@/components/ui/skeleton'
+import { toast } from 'sonner'
+
+type Container = {
+  id: string
+  container_number: string
+  container_code: string
+  start_date: string
+  status: string
+  yard_location: string
+  client_id: string
+  clients: {
+    name: string
+  } | null
+}
+
+const PAGE_SIZE_OPTIONS = [10, 20, 50]
 
 export default function Containers() {
-  const { user, token } = useAuthStore()
-  const [containers, setContainers] = useState<any[]>([])
-  const [clients, setClients] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+  const { user } = useAuthStore()
+  const navigate = useNavigate()
 
-  // Filters
+  const [containers, setContainers] = useState<Container[]>([])
+  const [loading, setLoading] = useState(true)
+  const [totalCount, setTotalCount] = useState(0)
+
+  // Filters state
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
   const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
-  const [typeFilter, setTypeFilter] = useState('all')
-  const [clientFilter, setClientFilter] = useState('all')
+  const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [clientFilter, setClientFilter] = useState<string>('all')
+  const [sortColumn, setSortColumn] = useState<string>('container_number')
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
+
+  // Lists for dropdowns
+  const [clientsList, setClientsList] = useState<
+    { id: string; name: string }[]
+  >([])
 
   useEffect(() => {
-    const fetchInitialData = async () => {
-      if (!user || !token) return
+    // Fetch clients list for filter
+    const fetchClients = async () => {
+      const { data } = await supabase
+        .from('clients')
+        .select('id, name')
+        .order('name')
+      if (data) setClientsList(data)
+    }
+    fetchClients()
+  }, [])
+
+  useEffect(() => {
+    const fetchContainers = async () => {
       setLoading(true)
       try {
-        let query = 'select=*,clients(name)' // Join to get client name
-
-        if (user.role === 'operator' && user.client_id) {
-          query += `&client_id=eq.${user.client_id}`
-        }
-
-        const data = await api.db.select<any>('containers', query, token)
-        setContainers(data)
-
-        if (user.role === 'admin') {
-          const clientsData = await api.db.select<any>(
-            'clients',
-            'select=id,name',
-            token,
+        let query = supabase
+          .from('containers')
+          .select(
+            'id, container_number, container_code, start_date, status, yard_location, client_id, clients(name)',
+            {
+              count: 'exact',
+            },
           )
-          setClients(clientsData)
+
+        // Apply Search (Container Number)
+        if (search) {
+          query = query.ilike('container_number', `%${search}%`)
         }
-      } catch (e) {
-        console.error(e)
+
+        // Apply Status Filter
+        if (statusFilter !== 'all') {
+          query = query.eq('status', statusFilter)
+        }
+
+        // Apply Client Filter
+        if (clientFilter !== 'all') {
+          query = query.eq('client_id', clientFilter)
+        }
+
+        // Apply Sorting
+        if (sortColumn === 'client_name') {
+          // Sorting by foreign table column is tricky in simple query builder without specific setup or view.
+          // Fallback: we sort by client_id for now as proxy, or we accept simple sorting limitation.
+          // However, we can use the foreign table sort syntax if supported or sort locally (not scalable).
+          // Supabase supports sorting by referenced table: order('clients(name)')
+          query = query.order('clients(name)', {
+            ascending: sortDirection === 'asc',
+          })
+        } else {
+          query = query.order(sortColumn, {
+            ascending: sortDirection === 'asc',
+          })
+        }
+
+        // Apply Pagination
+        const from = (page - 1) * pageSize
+        const to = from + pageSize - 1
+        query = query.range(from, to)
+
+        const { data, count, error } = await query
+
+        if (error) throw error
+
+        setContainers(data as any[]) // Type assertion needed for joined data
+        setTotalCount(count || 0)
+      } catch (error) {
+        console.error('Error fetching containers:', error)
+        toast.error('Erro ao carregar lista de contêineres')
       } finally {
         setLoading(false)
       }
     }
-    fetchInitialData()
-  }, [user, token])
 
-  const filteredContainers = containers.filter((c) => {
-    const matchesSearch = c.container_number
-      .toLowerCase()
-      .includes(search.toLowerCase())
-    const matchesStatus = statusFilter === 'all' || c.status === statusFilter
-    const matchesType = typeFilter === 'all' || c.type === typeFilter
-    const matchesClient = clientFilter === 'all' || c.client_id === clientFilter
-    return matchesSearch && matchesStatus && matchesType && matchesClient
-  })
+    const timeoutId = setTimeout(() => {
+      fetchContainers()
+    }, 300) // Debounce search
 
-  // Unique types and statuses for filter options
-  const uniqueTypes = Array.from(new Set(containers.map((c) => c.type)))
-  const uniqueStatuses = Array.from(new Set(containers.map((c) => c.status)))
+    return () => clearTimeout(timeoutId)
+  }, [
+    page,
+    pageSize,
+    search,
+    statusFilter,
+    clientFilter,
+    sortColumn,
+    sortDirection,
+  ])
+
+  const handleSort = (column: string) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortColumn(column)
+      setSortDirection('asc')
+    }
+  }
 
   const clearFilters = () => {
     setSearch('')
     setStatusFilter('all')
-    setTypeFilter('all')
     setClientFilter('all')
+    setPage(1)
   }
 
+  const totalPages = Math.ceil(totalCount / pageSize)
+
   const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
+    switch (status) {
       case 'active':
         return 'default'
-      case 'completed':
+      case 'inactive':
         return 'secondary'
-      case 'maintenance':
-        return 'destructive'
-      case 'in transit':
-        return 'default'
-      default:
+      case 'closed':
         return 'outline'
+      default:
+        return 'secondary'
     }
   }
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <h1 className="text-3xl font-bold">Contêineres</h1>
-        {filteredContainers.length > 0 && (
-          <span className="text-sm text-muted-foreground">
-            {filteredContainers.length} registros encontrados
-          </span>
-        )}
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Contêineres</h1>
+          <p className="text-muted-foreground">
+            Gerencie e monitore todos os contêineres do sistema.
+          </p>
+        </div>
+        <Button onClick={() => navigate('/containers/new')}>
+          <Plus className="mr-2 h-4 w-4" /> Novo Contêiner
+        </Button>
       </div>
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg font-medium">
-            Filtros e Pesquisa
-          </CardTitle>
+          <CardTitle className="text-lg font-medium">Filtros</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -128,63 +217,58 @@ export default function Containers() {
                 placeholder="Buscar número..."
                 className="pl-9"
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => {
+                  setSearch(e.target.value)
+                  setPage(1)
+                }}
               />
             </div>
 
-            {user?.role === 'admin' && (
-              <Select value={clientFilter} onValueChange={setClientFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Cliente" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os Clientes</SelectItem>
-                  {clients.map((client) => (
-                    <SelectItem key={client.id} value={client.id}>
-                      {client.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-
-            <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Tipo" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os Tipos</SelectItem>
-                {uniqueTypes.map((t) => (
-                  <SelectItem key={t} value={t}>
-                    {t}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <Select
+              value={statusFilter}
+              onValueChange={(val) => {
+                setStatusFilter(val)
+                setPage(1)
+              }}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos os Status</SelectItem>
-                {uniqueStatuses.map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {s}
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="inactive">Inactive</SelectItem>
+                <SelectItem value="closed">Closed</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select
+              value={clientFilter}
+              onValueChange={(val) => {
+                setClientFilter(val)
+                setPage(1)
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Cliente" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os Clientes</SelectItem>
+                {clientsList.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-          </div>
-          <div className="flex justify-end">
+
             <Button
               variant="ghost"
-              size="sm"
               onClick={clearFilters}
-              className="text-muted-foreground"
+              className="text-muted-foreground w-full md:w-auto"
             >
               <FilterX className="mr-2 h-4 w-4" />
-              Limpar Filtros
+              Limpar
             </Button>
           </div>
         </CardContent>
@@ -195,65 +279,84 @@ export default function Containers() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Número</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Status</TableHead>
-                {user?.role === 'admin' && <TableHead>Cliente</TableHead>}
+                <TableHead
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => handleSort('container_number')}
+                >
+                  Número{' '}
+                  {sortColumn === 'container_number' &&
+                    (sortDirection === 'asc' ? '↑' : '↓')}
+                </TableHead>
+                <TableHead
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => handleSort('client_name')}
+                >
+                  Cliente{' '}
+                  {sortColumn === 'client_name' &&
+                    (sortDirection === 'asc' ? '↑' : '↓')}
+                </TableHead>
+                <TableHead>Código</TableHead>
+                <TableHead
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => handleSort('start_date')}
+                >
+                  Início{' '}
+                  {sortColumn === 'start_date' &&
+                    (sortDirection === 'asc' ? '↑' : '↓')}
+                </TableHead>
+                <TableHead
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => handleSort('status')}
+                >
+                  Status{' '}
+                  {sortColumn === 'status' &&
+                    (sortDirection === 'asc' ? '↑' : '↓')}
+                </TableHead>
+                <TableHead>Localização</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <TableRow key={i}>
-                    <TableCell>
-                      <Skeleton className="h-4 w-24" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-4 w-16" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-4 w-20" />
-                    </TableCell>
-                    {user?.role === 'admin' && (
-                      <TableCell>
-                        <Skeleton className="h-4 w-32" />
-                      </TableCell>
-                    )}
-                    <TableCell className="text-right">
-                      <Skeleton className="h-8 w-8 ml-auto" />
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : filteredContainers.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="h-24 text-center">
+                    <Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" />
+                  </TableCell>
+                </TableRow>
+              ) : containers.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={5}
-                    className="text-center h-24 text-muted-foreground"
+                    colSpan={7}
+                    className="h-24 text-center text-muted-foreground"
                   >
                     Nenhum contêiner encontrado.
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredContainers.map((container) => (
+                containers.map((container) => (
                   <TableRow key={container.id} className="group">
                     <TableCell className="font-medium">
                       {container.container_number}
                     </TableCell>
-                    <TableCell>{container.type}</TableCell>
+                    <TableCell>{container.clients?.name || '-'}</TableCell>
+                    <TableCell>{container.container_code}</TableCell>
                     <TableCell>
-                      <Badge variant={getStatusColor(container.status) as any}>
+                      {container.start_date
+                        ? format(new Date(container.start_date), 'dd/MM/yyyy')
+                        : '-'}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={getStatusColor(container.status) as any}
+                        className="capitalize"
+                      >
                         {container.status}
                       </Badge>
                     </TableCell>
-                    {user?.role === 'admin' && (
-                      <TableCell>{container.clients?.name || '-'}</TableCell>
-                    )}
+                    <TableCell>{container.yard_location || '-'}</TableCell>
                     <TableCell className="text-right">
                       <Button asChild variant="ghost" size="sm">
-                        <Link to={`/containers/${container.id}`}>
-                          <Eye className="h-4 w-4 mr-1" /> Ver Detalhes
-                        </Link>
+                        <Link to={`/containers/${container.id}`}>Detalhes</Link>
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -263,6 +366,95 @@ export default function Containers() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Pagination */}
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <span>Itens por página:</span>
+          <Select
+            value={pageSize.toString()}
+            onValueChange={(val) => {
+              setPageSize(Number(val))
+              setPage(1)
+            }}
+          >
+            <SelectTrigger className="h-8 w-[70px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {PAGE_SIZE_OPTIONS.map((size) => (
+                <SelectItem key={size} value={size.toString()}>
+                  {size}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <span>
+            Mostrando {containers.length > 0 ? (page - 1) * pageSize + 1 : 0} -{' '}
+            {Math.min(page * pageSize, totalCount)} de {totalCount}
+          </span>
+        </div>
+
+        {totalPages > 1 && (
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    if (page > 1) setPage(page - 1)
+                  }}
+                  className={
+                    page <= 1
+                      ? 'pointer-events-none opacity-50'
+                      : 'cursor-pointer'
+                  }
+                />
+              </PaginationItem>
+
+              {/* Simple Pagination Logic for brevity */}
+              {Array.from({ length: Math.min(totalPages, 5) }).map((_, i) => {
+                const p = i + 1
+                return (
+                  <PaginationItem key={p}>
+                    <PaginationLink
+                      href="#"
+                      isActive={page === p}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        setPage(p)
+                      }}
+                    >
+                      {p}
+                    </PaginationLink>
+                  </PaginationItem>
+                )
+              })}
+              {totalPages > 5 && (
+                <PaginationItem>
+                  <PaginationEllipsis />
+                </PaginationItem>
+              )}
+
+              <PaginationItem>
+                <PaginationNext
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    if (page < totalPages) setPage(page + 1)
+                  }}
+                  className={
+                    page >= totalPages
+                      ? 'pointer-events-none opacity-50'
+                      : 'cursor-pointer'
+                  }
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        )}
+      </div>
     </div>
   )
 }

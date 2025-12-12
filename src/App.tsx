@@ -5,6 +5,7 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 import Index from './pages/Index'
 import Dashboard from './pages/Dashboard'
 import Containers from './pages/Containers'
+import ContainerNew from './pages/ContainerNew'
 import ContainerDetails from './pages/ContainerDetails'
 import AdminUsers from './pages/admin/Users'
 import ForgotPassword from './pages/ForgotPassword'
@@ -24,6 +25,21 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       </div>
     )
   if (!user) return <Navigate to="/" replace />
+
+  return <>{children}</>
+}
+
+const OperatorRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, isLoading } = useAuthStore()
+
+  if (isLoading)
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        Carregando...
+      </div>
+    )
+  if (!user) return <Navigate to="/" replace />
+  if (user.role === 'viewer') return <Navigate to="/dashboard" replace />
 
   return <>{children}</>
 }
@@ -67,17 +83,25 @@ const App = () => (
             <Route
               path="/containers"
               element={
-                <ProtectedRoute>
+                <OperatorRoute>
                   <Containers />
-                </ProtectedRoute>
+                </OperatorRoute>
+              }
+            />
+            <Route
+              path="/containers/new"
+              element={
+                <OperatorRoute>
+                  <ContainerNew />
+                </OperatorRoute>
               }
             />
             <Route
               path="/containers/:id"
               element={
-                <ProtectedRoute>
+                <OperatorRoute>
                   <ContainerDetails />
-                </ProtectedRoute>
+                </OperatorRoute>
               }
             />
             <Route
