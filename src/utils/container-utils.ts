@@ -52,3 +52,25 @@ export function formatCNPJ(value: string) {
     .replace(/(\d{4})(\d)/, '$1-$2')
     .substring(0, 18)
 }
+
+export function formatPhone(value: string) {
+  const digits = value.replace(/\D/g, '').substring(0, 11)
+
+  if (digits.length > 10) {
+    // (11) 91234-5678
+    return digits.replace(/^(\d{2})(\d{5})(\d{4})/, '($1) $2-$3')
+  }
+  if (digits.length > 6) {
+    // (11) 1234-5678
+    return digits.replace(/^(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3')
+  }
+  if (digits.length > 2) {
+    // (11) 1234...
+    return digits.replace(/^(\d{2})(\d{0,5})/, '($1) $2')
+  }
+  if (digits.length > 0) {
+    // (1...
+    return digits.replace(/^(\d*)/, '($1')
+  }
+  return digits
+}
