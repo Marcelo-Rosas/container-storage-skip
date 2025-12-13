@@ -1,7 +1,5 @@
-import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect, useCallback } from 'react'
 import { Plus, Search, FilterX, Loader2 } from 'lucide-react'
-import useAuthStore from '@/stores/useAuthStore'
 import { supabase } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -25,16 +23,15 @@ import {
 import { toast } from 'sonner'
 import { ContainerWithStats } from '@/types/container'
 import { ContainerCard } from '@/components/ContainerCard'
+import { NewContainerDialog } from '@/components/NewContainerDialog'
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50]
 
 export default function Containers() {
-  const { user } = useAuthStore()
-  const navigate = useNavigate()
-
   const [containers, setContainers] = useState<ContainerWithStats[]>([])
   const [loading, setLoading] = useState(true)
   const [totalCount, setTotalCount] = useState(0)
+  const [isNewContainerOpen, setIsNewContainerOpen] = useState(false)
 
   // Filters state
   const [page, setPage] = useState(1)
@@ -62,67 +59,59 @@ export default function Containers() {
     fetchClients()
   }, [])
 
-  useEffect(() => {
-    const fetchContainers = async () => {
-      setLoading(true)
-      try {
-        // Query the new View instead of the raw table
-        let query = supabase
-          .from('containers_stats_view')
-          .select('*', { count: 'exact' })
+  const fetchContainers = useCallback(async () => {
+    setLoading(true)
+    try {
+      // Query the new View instead of the raw table
+      let query = supabase
+        .from('containers_stats_view')
+        .select('*', { count: 'exact' })
 
-        // Apply Search (Container Number or Client Name)
-        if (search) {
-          query = query.or(
-            `container_number.ilike.%${search}%,client_name.ilike.%${search}%`,
-          )
-        }
-
-        // Apply Status Filter
-        if (statusFilter !== 'all') {
-          query = query.eq('status', statusFilter)
-        }
-
-        // Apply Client Filter
-        if (clientFilter !== 'all') {
-          query = query.eq('client_id', clientFilter)
-        }
-
-        // Apply Sorting
-        // Default sort by start_date desc if not specified, but state has default
-        if (sortColumn === 'created_at') {
-          // View doesn't have created_at, fallback to start_date or id
-          query = query.order('start_date', { ascending: false })
-        } else {
-          query = query.order(sortColumn, {
-            ascending: sortDirection === 'asc',
-          })
-        }
-
-        // Apply Pagination
-        const from = (page - 1) * pageSize
-        const to = from + pageSize - 1
-        query = query.range(from, to)
-
-        const { data, count, error } = await query
-
-        if (error) throw error
-
-        setContainers((data as any[]) || [])
-        setTotalCount(count || 0)
-      } catch (error) {
-        console.error('Error fetching containers:', error)
-        toast.error('Erro ao carregar lista de contêineres')
-      } finally {
-        setLoading(false)
+      // Apply Search (Container Number or Client Name)
+      if (search) {
+        query = query.or(
+          `container_number.ilike.%${search}%,client_name.ilike.%${search}%`,
+        )
       }
+
+      // Apply Status Filter
+      if (statusFilter !== 'all') {
+        query = query.eq('status', statusFilter)
+      }
+
+      // Apply Client Filter
+      if (clientFilter !== 'all') {
+        query = query.eq('client_id', clientFilter)
+      }
+
+      // Apply Sorting
+      // Default sort by start_date desc if not specified, but state has default
+      if (sortColumn === 'created_at') {
+        // View doesn't have created_at, fallback to start_date or id
+        query = query.order('start_date', { ascending: false })
+      } else {
+        query = query.order(sortColumn, {
+          ascending: sortDirection === 'asc',
+        })
+      }
+
+      // Apply Pagination
+      const from = (page - 1) * pageSize
+      const to = from + pageSize - 1
+      query = query.range(from, to)
+
+      const { data, count, error } = await query
+
+      if (error) throw error
+
+      setContainers((data as any[]) || [])
+      setTotalCount(count || 0)
+    } catch (error) {
+      console.error('Error fetching containers:', error)
+      toast.error('Erro ao carregar lista de contêineres')
+    } finally {
+      setLoading(false)
     }
-
-    const timeoutId = setTimeout(() => {
-      fetchContainers()
-    }, 300) // Debounce search
-
-    return () => clearTimeout(timeoutId)
   }, [
     page,
     pageSize,
@@ -132,6 +121,14 @@ export default function Containers() {
     sortColumn,
     sortDirection,
   ])
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      fetchContainers()
+    }, 300) // Debounce search
+
+    return () => clearTimeout(timeoutId)
+  }, [fetchContainers])
 
   const clearFilters = () => {
     setSearch('')
@@ -151,7 +148,7 @@ export default function Containers() {
             Gerencie e monitore todos os contêineres do sistema.
           </p>
         </div>
-        <Button onClick={() => navigate('/containers/new')}>
+        <Button onClick={() => setIsNewContainerOpen(true)}>
           <Plus className="mr-2 h-4 w-4" /> Novo Contêiner
         </Button>
       </div>
@@ -325,8 +322,6 @@ export default function Containers() {
               </PaginationItem>
 
               {Array.from({ length: Math.min(totalPages, 5) }).map((_, i) => {
-                // Simplified pagination logic showing first 5 or logic around current page
-                // For brevity, just first 5. Real app would handle ranges.
                 const p = i + 1
                 if (p > totalPages) return null
                 return (
@@ -369,6 +364,12 @@ export default function Containers() {
           </Pagination>
         )}
       </div>
+
+      <NewContainerDialog
+        open={isNewContainerOpen}
+        onOpenChange={setIsNewContainerOpen}
+        onSuccess={fetchContainers}
+      />
     </div>
   )
 }
