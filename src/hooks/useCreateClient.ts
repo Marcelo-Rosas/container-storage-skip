@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { supabase } from '@/lib/supabase/client'
+import { api } from '@/lib/api'
+import useAuthStore from '@/stores/useAuthStore'
 
 interface CreateClientData {
   name: string
@@ -13,6 +14,7 @@ interface CreateClientData {
 
 export function useCreateClient() {
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const { user, token } = useAuthStore()
 
   const createClient = async (
     data: CreateClientData,
@@ -23,6 +25,10 @@ export function useCreateClient() {
   ) => {
     setIsSubmitting(true)
     try {
+      if (!user?.id || !token) {
+        throw new Error('Usuário não autenticado')
+      }
+
       // Strip non-numeric characters from tax_id
       const cleanTaxId = data.tax_id.replace(/\D/g, '')
 
@@ -34,25 +40,32 @@ export function useCreateClient() {
         phone: data.phone || null,
         address: data.address || null,
         status: 'active',
+        user_id: user.id,
       }
 
-      const { data: newClient, error } = await supabase
-        .from('clients')
-        .insert(payload)
-        .select()
-        .single()
+      let newClient: any
 
-      if (error) {
-        if (error.code === '23505') {
+      try {
+        // Use api.db.insert which uses the auth token
+        const result = await api.db.insert<any[]>('clients', payload, token)
+        // Ensure we get the object (supabase return=representation returns array)
+        if (Array.isArray(result) && result.length > 0) {
+          newClient = result[0]
+        } else {
+          newClient = result
+        }
+      } catch (error: any) {
+        // Handle duplicate key error manually since api wraps the error
+        if (
+          error.message?.includes('duplicate key') ||
+          error.message?.includes('23505')
+        ) {
           throw new Error('Cliente já cadastrado com este CNPJ')
         }
         throw error
       }
 
       toast.success('Cliente criado com sucesso!')
-
-      // Note: If using React Query, we would invalidate queries here.
-      // queryClient.invalidateQueries({ queryKey: ['clients'] })
 
       options?.onSuccess?.(newClient)
       return { data: newClient, error: null }
