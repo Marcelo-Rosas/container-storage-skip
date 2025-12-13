@@ -11,7 +11,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: '13.0.5'
+    PostgrestVersion: "13.0.5"
   }
   public: {
     Tables: {
@@ -89,7 +89,7 @@ export type Database = {
           removed_volume_m3: number | null
           sku: string
           snapshot_id: string
-          status: Database['public']['Enums']['billing_status'] | null
+          status: Database["public"]["Enums"]["billing_status"] | null
           unit_cost_brl: number | null
           volume_percentage: number | null
           volume_removed: number | null
@@ -125,7 +125,7 @@ export type Database = {
           removed_volume_m3?: number | null
           sku: string
           snapshot_id: string
-          status?: Database['public']['Enums']['billing_status'] | null
+          status?: Database["public"]["Enums"]["billing_status"] | null
           unit_cost_brl?: number | null
           volume_percentage?: number | null
           volume_removed?: number | null
@@ -161,46 +161,46 @@ export type Database = {
           removed_volume_m3?: number | null
           sku?: string
           snapshot_id?: string
-          status?: Database['public']['Enums']['billing_status'] | null
+          status?: Database["public"]["Enums"]["billing_status"] | null
           unit_cost_brl?: number | null
           volume_percentage?: number | null
           volume_removed?: number | null
         }
         Relationships: [
           {
-            foreignKeyName: 'billing_lines_client_id_fkey'
-            columns: ['client_id']
+            foreignKeyName: "billing_lines_client_id_fkey"
+            columns: ["client_id"]
             isOneToOne: false
-            referencedRelation: 'admin_users_view'
-            referencedColumns: ['client_id']
+            referencedRelation: "admin_users_view"
+            referencedColumns: ["client_id"]
           },
           {
-            foreignKeyName: 'billing_lines_client_id_fkey'
-            columns: ['client_id']
+            foreignKeyName: "billing_lines_client_id_fkey"
+            columns: ["client_id"]
             isOneToOne: false
-            referencedRelation: 'clients'
-            referencedColumns: ['id']
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'billing_lines_container_id_fkey'
-            columns: ['container_id']
+            foreignKeyName: "billing_lines_container_id_fkey"
+            columns: ["container_id"]
             isOneToOne: false
-            referencedRelation: 'containers'
-            referencedColumns: ['id']
+            referencedRelation: "containers"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'billing_lines_container_id_fkey'
-            columns: ['container_id']
+            foreignKeyName: "billing_lines_container_id_fkey"
+            columns: ["container_id"]
             isOneToOne: false
-            referencedRelation: 'containers_stats_view'
-            referencedColumns: ['id']
+            referencedRelation: "containers_stats_view"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'billing_lines_snapshot_id_fkey'
-            columns: ['snapshot_id']
+            foreignKeyName: "billing_lines_snapshot_id_fkey"
+            columns: ["snapshot_id"]
             isOneToOne: false
-            referencedRelation: 'snapshots'
-            referencedColumns: ['id']
+            referencedRelation: "snapshots"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -222,18 +222,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'client_users_client_id_fkey'
-            columns: ['client_id']
+            foreignKeyName: "client_users_client_id_fkey"
+            columns: ["client_id"]
             isOneToOne: false
-            referencedRelation: 'admin_users_view'
-            referencedColumns: ['client_id']
+            referencedRelation: "admin_users_view"
+            referencedColumns: ["client_id"]
           },
           {
-            foreignKeyName: 'client_users_client_id_fkey'
-            columns: ['client_id']
+            foreignKeyName: "client_users_client_id_fkey"
+            columns: ["client_id"]
             isOneToOne: false
-            referencedRelation: 'clients'
-            referencedColumns: ['id']
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -249,6 +249,7 @@ export type Database = {
           default_base_cost_brl: number | null
           default_measurement_day: number | null
           email: string | null
+          fantasy_name: string | null
           id: string
           name: string
           notes: string | null
@@ -257,6 +258,7 @@ export type Database = {
           status: string | null
           tax_id: string
           updated_at: string | null
+          user_id: string
           zip_code: string | null
         }
         Insert: {
@@ -270,6 +272,7 @@ export type Database = {
           default_base_cost_brl?: number | null
           default_measurement_day?: number | null
           email?: string | null
+          fantasy_name?: string | null
           id?: string
           name: string
           notes?: string | null
@@ -278,6 +281,7 @@ export type Database = {
           status?: string | null
           tax_id: string
           updated_at?: string | null
+          user_id: string
           zip_code?: string | null
         }
         Update: {
@@ -291,6 +295,7 @@ export type Database = {
           default_base_cost_brl?: number | null
           default_measurement_day?: number | null
           email?: string | null
+          fantasy_name?: string | null
           id?: string
           name?: string
           notes?: string | null
@@ -299,6 +304,7 @@ export type Database = {
           status?: string | null
           tax_id?: string
           updated_at?: string | null
+          user_id?: string
           zip_code?: string | null
         }
         Relationships: []
@@ -382,7 +388,7 @@ export type Database = {
           nominal_volume_m3: number | null
           notes: string | null
           start_date: string
-          status: Database['public']['Enums']['container_status'] | null
+          status: Database["public"]["Enums"]["container_status"] | null
           updated_at: string | null
           yard_location: string | null
         }
@@ -401,7 +407,7 @@ export type Database = {
           nominal_volume_m3?: number | null
           notes?: string | null
           start_date: string
-          status?: Database['public']['Enums']['container_status'] | null
+          status?: Database["public"]["Enums"]["container_status"] | null
           updated_at?: string | null
           yard_location?: string | null
         }
@@ -420,24 +426,24 @@ export type Database = {
           nominal_volume_m3?: number | null
           notes?: string | null
           start_date?: string
-          status?: Database['public']['Enums']['container_status'] | null
+          status?: Database["public"]["Enums"]["container_status"] | null
           updated_at?: string | null
           yard_location?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: 'containers_client_id_fkey'
-            columns: ['client_id']
+            foreignKeyName: "containers_client_id_fkey"
+            columns: ["client_id"]
             isOneToOne: false
-            referencedRelation: 'admin_users_view'
-            referencedColumns: ['client_id']
+            referencedRelation: "admin_users_view"
+            referencedColumns: ["client_id"]
           },
           {
-            foreignKeyName: 'containers_client_id_fkey'
-            columns: ['client_id']
+            foreignKeyName: "containers_client_id_fkey"
+            columns: ["client_id"]
             isOneToOne: false
-            referencedRelation: 'clients'
-            referencedColumns: ['id']
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -452,7 +458,7 @@ export type Database = {
           document_type: string | null
           document_url: string | null
           event_date: string
-          event_type: Database['public']['Enums']['event_type']
+          event_type: Database["public"]["Enums"]["event_type"]
           id: string
           import_batch_id: string | null
           imported_from: string | null
@@ -478,7 +484,7 @@ export type Database = {
           document_type?: string | null
           document_url?: string | null
           event_date?: string
-          event_type: Database['public']['Enums']['event_type']
+          event_type: Database["public"]["Enums"]["event_type"]
           id?: string
           import_batch_id?: string | null
           imported_from?: string | null
@@ -504,7 +510,7 @@ export type Database = {
           document_type?: string | null
           document_url?: string | null
           event_date?: string
-          event_type?: Database['public']['Enums']['event_type']
+          event_type?: Database["public"]["Enums"]["event_type"]
           id?: string
           import_batch_id?: string | null
           imported_from?: string | null
@@ -522,18 +528,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'events_container_id_fkey'
-            columns: ['container_id']
+            foreignKeyName: "events_container_id_fkey"
+            columns: ["container_id"]
             isOneToOne: false
-            referencedRelation: 'containers'
-            referencedColumns: ['id']
+            referencedRelation: "containers"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'events_container_id_fkey'
-            columns: ['container_id']
+            foreignKeyName: "events_container_id_fkey"
+            columns: ["container_id"]
             isOneToOne: false
-            referencedRelation: 'containers_stats_view'
-            referencedColumns: ['id']
+            referencedRelation: "containers_stats_view"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -555,7 +561,7 @@ export type Database = {
           progress_percentage: number | null
           result: Json | null
           started_at: string | null
-          status: Database['public']['Enums']['job_status'] | null
+          status: Database["public"]["Enums"]["job_status"] | null
           total_records: number | null
         }
         Insert: {
@@ -575,7 +581,7 @@ export type Database = {
           progress_percentage?: number | null
           result?: Json | null
           started_at?: string | null
-          status?: Database['public']['Enums']['job_status'] | null
+          status?: Database["public"]["Enums"]["job_status"] | null
           total_records?: number | null
         }
         Update: {
@@ -595,7 +601,7 @@ export type Database = {
           progress_percentage?: number | null
           result?: Json | null
           started_at?: string | null
-          status?: Database['public']['Enums']['job_status'] | null
+          status?: Database["public"]["Enums"]["job_status"] | null
           total_records?: number | null
         }
         Relationships: []
@@ -607,7 +613,7 @@ export type Database = {
           description: string | null
           id: string
           last_movement_at: string | null
-          last_movement_type: Database['public']['Enums']['event_type'] | null
+          last_movement_type: Database["public"]["Enums"]["event_type"] | null
           model_code: string | null
           product_name: string
           sku: string
@@ -626,7 +632,7 @@ export type Database = {
           description?: string | null
           id?: string
           last_movement_at?: string | null
-          last_movement_type?: Database['public']['Enums']['event_type'] | null
+          last_movement_type?: Database["public"]["Enums"]["event_type"] | null
           model_code?: string | null
           product_name: string
           sku: string
@@ -645,7 +651,7 @@ export type Database = {
           description?: string | null
           id?: string
           last_movement_at?: string | null
-          last_movement_type?: Database['public']['Enums']['event_type'] | null
+          last_movement_type?: Database["public"]["Enums"]["event_type"] | null
           model_code?: string | null
           product_name?: string
           sku?: string
@@ -660,18 +666,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'inventory_container_id_fkey'
-            columns: ['container_id']
+            foreignKeyName: "inventory_container_id_fkey"
+            columns: ["container_id"]
             isOneToOne: false
-            referencedRelation: 'containers'
-            referencedColumns: ['id']
+            referencedRelation: "containers"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'inventory_container_id_fkey'
-            columns: ['container_id']
+            foreignKeyName: "inventory_container_id_fkey"
+            columns: ["container_id"]
             isOneToOne: false
-            referencedRelation: 'containers_stats_view'
-            referencedColumns: ['id']
+            referencedRelation: "containers_stats_view"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -726,7 +732,7 @@ export type Database = {
           full_name: string | null
           id: string
           is_active: boolean | null
-          role: Database['public']['Enums']['app_role'] | null
+          role: Database["public"]["Enums"]["app_role"] | null
           updated_at: string
         }
         Insert: {
@@ -737,7 +743,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           is_active?: boolean | null
-          role?: Database['public']['Enums']['app_role'] | null
+          role?: Database["public"]["Enums"]["app_role"] | null
           updated_at?: string
         }
         Update: {
@@ -748,7 +754,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           is_active?: boolean | null
-          role?: Database['public']['Enums']['app_role'] | null
+          role?: Database["public"]["Enums"]["app_role"] | null
           updated_at?: string
         }
         Relationships: []
@@ -775,7 +781,7 @@ export type Database = {
           removal_percentage: number | null
           removed_volume_m3: number | null
           snapshot_date: string
-          status: Database['public']['Enums']['snapshot_status'] | null
+          status: Database["public"]["Enums"]["snapshot_status"] | null
           total_items: number | null
           total_volume_m3: number | null
           total_weight_kg: number | null
@@ -801,7 +807,7 @@ export type Database = {
           removal_percentage?: number | null
           removed_volume_m3?: number | null
           snapshot_date: string
-          status?: Database['public']['Enums']['snapshot_status'] | null
+          status?: Database["public"]["Enums"]["snapshot_status"] | null
           total_items?: number | null
           total_volume_m3?: number | null
           total_weight_kg?: number | null
@@ -827,25 +833,25 @@ export type Database = {
           removal_percentage?: number | null
           removed_volume_m3?: number | null
           snapshot_date?: string
-          status?: Database['public']['Enums']['snapshot_status'] | null
+          status?: Database["public"]["Enums"]["snapshot_status"] | null
           total_items?: number | null
           total_volume_m3?: number | null
           total_weight_kg?: number | null
         }
         Relationships: [
           {
-            foreignKeyName: 'snapshots_container_id_fkey'
-            columns: ['container_id']
+            foreignKeyName: "snapshots_container_id_fkey"
+            columns: ["container_id"]
             isOneToOne: false
-            referencedRelation: 'containers'
-            referencedColumns: ['id']
+            referencedRelation: "containers"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'snapshots_container_id_fkey'
-            columns: ['container_id']
+            foreignKeyName: "snapshots_container_id_fkey"
+            columns: ["container_id"]
             isOneToOne: false
-            referencedRelation: 'containers_stats_view'
-            referencedColumns: ['id']
+            referencedRelation: "containers_stats_view"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -877,19 +883,19 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
-          role: Database['public']['Enums']['app_role']
+          role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Insert: {
           created_at?: string | null
           id?: string
-          role?: Database['public']['Enums']['app_role']
+          role?: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Update: {
           created_at?: string | null
           id?: string
-          role?: Database['public']['Enums']['app_role']
+          role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
         }
         Relationships: []
@@ -905,7 +911,7 @@ export type Database = {
           full_name: string | null
           id: string | null
           is_active: boolean | null
-          role: Database['public']['Enums']['app_role'] | null
+          role: Database["public"]["Enums"]["app_role"] | null
         }
         Relationships: []
       }
@@ -923,25 +929,25 @@ export type Database = {
           items_count: number | null
           nominal_volume_m3: number | null
           start_date: string | null
-          status: Database['public']['Enums']['container_status'] | null
+          status: Database["public"]["Enums"]["container_status"] | null
           total_gross_weight: number | null
           used_volume: number | null
           yard_location: string | null
         }
         Relationships: [
           {
-            foreignKeyName: 'containers_client_id_fkey'
-            columns: ['client_id']
+            foreignKeyName: "containers_client_id_fkey"
+            columns: ["client_id"]
             isOneToOne: false
-            referencedRelation: 'admin_users_view'
-            referencedColumns: ['client_id']
+            referencedRelation: "admin_users_view"
+            referencedColumns: ["client_id"]
           },
           {
-            foreignKeyName: 'containers_client_id_fkey'
-            columns: ['client_id']
+            foreignKeyName: "containers_client_id_fkey"
+            columns: ["client_id"]
             isOneToOne: false
-            referencedRelation: 'clients'
-            referencedColumns: ['id']
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -950,12 +956,12 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      app_role: 'admin' | 'operator' | 'viewer'
-      billing_status: 'pending' | 'approved' | 'invoiced' | 'paid' | 'cancelled'
-      container_status: 'active' | 'inactive' | 'closed'
-      event_type: 'entry' | 'exit' | 'adjustment' | 'transfer'
-      job_status: 'queued' | 'processing' | 'completed' | 'failed'
-      snapshot_status: 'draft' | 'approved' | 'cancelled'
+      app_role: "admin" | "operator" | "viewer"
+      billing_status: "pending" | "approved" | "invoiced" | "paid" | "cancelled"
+      container_status: "active" | "inactive" | "closed"
+      event_type: "entry" | "exit" | "adjustment" | "transfer"
+      job_status: "queued" | "processing" | "completed" | "failed"
+      snapshot_status: "draft" | "approved" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -963,33 +969,33 @@ export type Database = {
   }
 }
 
-type DatabaseWithoutInternals = Omit<Database, '__InternalSupabase'>
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
 
-type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, 'public'>]
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
-    | keyof (DefaultSchema['Tables'] & DefaultSchema['Views'])
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
-        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Views'])
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
-      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Views'])[TableName] extends {
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
     ? R
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema['Tables'] &
-        DefaultSchema['Views'])
-    ? (DefaultSchema['Tables'] &
-        DefaultSchema['Views'])[DefaultSchemaTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
         Row: infer R
       }
       ? R
@@ -998,23 +1004,23 @@ export type Tables<
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema['Tables']
+    | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables']
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'][TableName] extends {
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I
     }
     ? I
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema['Tables']
-    ? DefaultSchema['Tables'][DefaultSchemaTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
         Insert: infer I
       }
       ? I
@@ -1023,23 +1029,23 @@ export type TablesInsert<
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema['Tables']
+    | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables']
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'][TableName] extends {
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U
     }
     ? U
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema['Tables']
-    ? DefaultSchema['Tables'][DefaultSchemaTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
         Update: infer U
       }
       ? U
@@ -1048,47 +1054,48 @@ export type TablesUpdate<
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema['Enums']
+    | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions['schema']]['Enums']
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions['schema']]['Enums'][EnumName]
-  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema['Enums']
-    ? DefaultSchema['Enums'][DefaultSchemaEnumNameOrOptions]
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
     : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema['CompositeTypes']
+    | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes']
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes'][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema['CompositeTypes']
-    ? DefaultSchema['CompositeTypes'][PublicCompositeTypeNameOrOptions]
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
 
 export const Constants = {
   public: {
     Enums: {
-      app_role: ['admin', 'operator', 'viewer'],
-      billing_status: ['pending', 'approved', 'invoiced', 'paid', 'cancelled'],
-      container_status: ['active', 'inactive', 'closed'],
-      event_type: ['entry', 'exit', 'adjustment', 'transfer'],
-      job_status: ['queued', 'processing', 'completed', 'failed'],
-      snapshot_status: ['draft', 'approved', 'cancelled'],
+      app_role: ["admin", "operator", "viewer"],
+      billing_status: ["pending", "approved", "invoiced", "paid", "cancelled"],
+      container_status: ["active", "inactive", "closed"],
+      event_type: ["entry", "exit", "adjustment", "transfer"],
+      job_status: ["queued", "processing", "completed", "failed"],
+      snapshot_status: ["draft", "approved", "cancelled"],
     },
   },
 } as const
+
