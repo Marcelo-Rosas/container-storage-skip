@@ -137,6 +137,14 @@ export default function Containers() {
     setPage(1)
   }
 
+  const handleClientCreated = (newClient: { id: string; name: string }) => {
+    setClientsList((prev) => {
+      const exists = prev.some((c) => c.id === newClient.id)
+      if (exists) return prev
+      return [...prev, newClient].sort((a, b) => a.name.localeCompare(b.name))
+    })
+  }
+
   const totalPages = Math.ceil(totalCount / pageSize)
 
   return (
@@ -369,6 +377,7 @@ export default function Containers() {
         open={isNewContainerOpen}
         onOpenChange={setIsNewContainerOpen}
         onSuccess={fetchContainers}
+        onClientCreated={handleClientCreated}
       />
     </div>
   )

@@ -85,12 +85,14 @@ interface NewContainerDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSuccess: () => void
+  onClientCreated?: (client: Client) => void
 }
 
 export function NewContainerDialog({
   open,
   onOpenChange,
   onSuccess,
+  onClientCreated,
 }: NewContainerDialogProps) {
   const { user } = useAuthStore()
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -203,6 +205,7 @@ export function NewContainerDialog({
       [...prev, newClient].sort((a, b) => a.name.localeCompare(b.name)),
     )
     form.setValue('client_id', newClient.id)
+    onClientCreated?.(newClient)
   }
 
   return (
